@@ -9,6 +9,9 @@
 #include <locale>
 #include <iomanip>
 
+const char* help[] = { "Программа предназначена для контроля звонков по распечатке оператора Tele2. Для контроля необходимо утилитой перевода конвертировать файл pdf в excel.\n",
+"Бесплатная утилита есть на сайте https://www.pdf2go.com/ru/pdf-to-excel. Из экселевского файла копируем в новый лист только таблицу звонков.\n",
+"Сохраняем новый лист в отдельный файл с расширением CSV.\nЗапускаем программу указав имя файла."};
 
 using namespace std; // используем стандартное пространство имен
 //***********************************************************************
@@ -24,7 +27,6 @@ std::vector<std::string> split(const std::string& s, char delimiter)
     return tokens;
 }
 //**************************************************************
-//static std::time_t to_time_t(const std::string& str, bool is_dst = false, const std::string& format = "%d.%m.%Y %H:%M:%S")
 std::tm to_time_t(const std::string& str, bool is_dst = false, const std::string& format = "%d.%m.%Y %H:%M:%S")
 {
     std::tm t = { 0 };
@@ -43,35 +45,33 @@ struct Call {
 };
 //*************************************************************
 int main() {
-    setlocale(LC_ALL, "ru_ru");
-    ifstream inf("list_112020.csv");
+    setlocale(LC_ALL, "Russian");
+    for (int i = 0; i < 3; ++i) {
+        cout << help[i] << endl;
+    }
+    cout << endl;
+
+    string fileName;
+    cout << "Введите имя файла: ";
+    getline(cin, fileName);
+    ifstream inf(fileName);
+    if (!inf) {
+        cout << "Файл " << fileName << " не найден. Проверьте путь или положите файл в каталог этой программы.";
+        exit(1);
+    }
     inf.imbue(std::locale("ru_RU.UTF-8"));
+
     std::vector<vector<std::string>> arStr;
     std::map<string, int> list;
     const char* weekday[] = { "Воскресение", "Понедельник", "Вторник", "Среда", "Четверг", "Пятница", "Суббота" };
     std::map<string, int> listCall;
     vector<Call> arCall;
     Call call;
+
     string s; // сюда будем класть считанные строки
-//    ifstream file("list_112020.csv"); // файл из которого читаем (для линукс путь будет выглядеть по другому)
-//******************************************************------------
-    {
-        std::tm t = {};
-        std::istringstream ss("01.11.2020 10:51:51");
-        ss.imbue(std::locale("de_DE.utf-8"));
-        ss >> std::get_time(&t, "%d.%m.%Y %H:%M:%S");
-        if (ss.fail()) {
-            std::cout << "Parse failed\n";
-        }
-        else {
-            std::cout << std::put_time(&t, "%c") << '\n';
-        }
-    }
-//-----------------------------------------------------------------*/
+
     while (getline(inf, s)) { // пока не достигнут конец файла класть очередную строку в переменную (s)
-//        cout << s << endl; // выводим на экран
         arStr.push_back(split(s, ','));
-//        cout << s.substr(0, s.find(',')) << endl;
     }
     for (vector<std::string> ar : arStr) {
         if (ar.size() > 3 && ar[2][0] == '+') {
@@ -87,7 +87,6 @@ int main() {
             call.data = to_time_t(ar[0]);
             call.dt = stoi(ar[3]);
             call.ish = ar[1][3] == -47 ? true : false;
-//            cout << "c = " << ar[1][3] << " / " << ar[1][4] << " =>" << call.ish << endl;
             arCall.push_back(call);
 
         }
@@ -125,9 +124,15 @@ int main() {
     string str;
     tm timeCall{};
     char* p{};
-    cout << "Введите номер: ";
-    cin >> str;
+ 
+    cout << "Введите номер телефона для анализа: ";
+    getline(cin, str);
     cout << endl;
+    for (int l = 0; l < str.length(); ++l) {
+        if (!isdigit(str[l]))
+            str.erase(l--, 1);
+    }
+    cout << str;
 
     struct OneDay {
         int dt;     //длительность
@@ -171,13 +176,8 @@ int main() {
         }
         cout << endl;
     }
-    //for (Call i : arCall) {
-    //    if (i.number.find(str.c_str()) != -1) {
-    //        cout << 
-    //    }
-    //}
-    
+     
     inf.close(); // обязательно закрываем файл что бы не повредить его
-
+    system("pause");
     return 0;
 }
